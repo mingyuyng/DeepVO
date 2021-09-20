@@ -108,23 +108,26 @@ for ep in range(par.epochs):
     M_deepvo.eval()
     loss_ang_mean_valid = 0
     loss_trans_mean_valid = 0
-
+    loss_yaw_mean_valid = 0
     for v_x, v_y in valid_dl:
 
         v_x = v_x.to(device)
         v_y = v_y.to(device)
 
-        loss, angle_loss, translation_loss = M_deepvo.get_loss(v_x, v_y)
+        loss, angle_loss, translation_loss, yaw_loss = M_deepvo.get_loss(v_x, v_y)
         loss = loss.data.cpu().numpy()
+        yaw_loss = yaw_loss.data.cpu().numpy()
         angle_loss = angle_loss.data.cpu().numpy()
         translation_loss = translation_loss.data.cpu().numpy()
 
         loss_ang_mean_valid += float(angle_loss) * 100 
         loss_trans_mean_valid += float(translation_loss)
+        loss_yaw_mean_valid += float(yaw_loss)
 
     print('Valid take {:.1f} sec'.format(time.time() - st_t))
     loss_ang_mean_valid /= len(valid_dl)
     loss_trans_mean_valid /= len(valid_dl)
+    loss_yaw_mean_valid /= len(valid_dl)
     loss_mean_valid = loss_ang_mean_valid + loss_trans_mean_valid
 
     message = f'Epoch {ep + 1}\ntrain loss mean: {loss_mean_train}, train ang loss mean: {loss_ang_mean_train}, train trans loss mean: {loss_trans_mean_train}'
@@ -132,7 +135,7 @@ for ep in range(par.epochs):
     f = open(par.record_path, 'a')
     f.write(message+'\n')
     
-    message = f'valid loss mean: {loss_mean_valid}, valid ang loss mean: {loss_ang_mean_valid}, valid trans loss mean: {loss_trans_mean_valid}'
+    message = f'valid loss mean: {loss_mean_valid}, valid ang loss mean: {loss_ang_mean_valid}, valid yaw loss mean: {loss_yaw_mean_valid}, valid trans loss mean: {loss_trans_mean_valid}'
     print(message)
     f = open(par.record_path, 'a')
     f.write(message+'\n')
@@ -140,20 +143,20 @@ for ep in range(par.epochs):
     # Save model
     # save if the valid loss decrease
     check_interval = 1
-    if loss_mean_valid < min_loss_valid and ep % check_interval == 0:
-        min_loss_valid = loss_mean_valid
-        print('Save model at ep {}, mean of valid loss: {}'.format(ep + 1, loss_mean_valid))
+    if loss_yaw_mean_valid < min_loss_valid and ep % check_interval == 0:
+        min_loss_valid = loss_yaw_mean_valid
+        print('Save model at ep {}, mean of valid loss: {}'.format(ep + 1, loss_yaw_mean_valid))
         torch.save(M_deepvo.state_dict(), par.save_model_path + '.valid')
-        torch.save(optimizer.state_dict(), par.save_optimzer_path + '.valid')
+        #torch.save(optimizer.state_dict(), par.save_optimzer_path + '.valid')
 
     if loss_mean_train < min_loss_train and ep % check_interval == 0:
         min_loss_train = loss_mean_train
         print('Save model at ep {}, mean of train loss: {}'.format(ep + 1, loss_mean_train))
         torch.save(M_deepvo.state_dict(), par.save_model_path + '.train')
-        torch.save(optimizer.state_dict(), par.save_optimzer_path + '.train')
+        #torch.save(optimizer.state_dict(), par.save_optimzer_path + '.train')
 
-    if (ep+1) % 5 == 0:
+    if ep >= 80:
         print(f'Save model at ep {ep+1}')
         torch.save(M_deepvo.state_dict(), par.save_model_path + '.epoch_' + str(ep+1))
-        torch.save(optimizer.state_dict(), par.save_optimzer_path + '.epoch_' + str(ep+1))
+        #torch.save(optimizer.state_dict(), par.save_optimzer_path + '.epoch_' + str(ep+1))
 

@@ -6,7 +6,7 @@ from PIL import Image
 import glob
 import os
 import torch
-from data_helper import get_data_info
+from utils.data import get_data_info
 from utils.util import pose_to_SE3
 import torchvision.transforms.functional as TF
 
@@ -32,17 +32,17 @@ def test(path_list):
     
     M_deepvo.eval()
     for test_video in path_list:
-        df = get_data_info(folder=test_video, seq_len=10, drop_last=Falses, overlap=1)
-        image_arr = np.asarray(df.image_path)  # image paths
-        groundtruth_arr = np.asarray(df.pose)
+        data = get_data_info(folder_list=[test_video], seq_len=10, drop_last=False, overlap=1)
+        image_arr = data['image_path'] # image paths
+        groundtruth_arr = data['pose']
         
         prev = None
         answer = [[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0], ]
         ang_err_list = []
         trans_err_list = []
-        for i in range(len(df)):
+        for i in range(len(data['image_path'])):
             
-            print('{} / {}'.format(i, len(df)), end='\r', flush=True)
+            print('{} / {}'.format(i, len(data['image_path'])), end='\r', flush=True)
             # Load the test images
             image_path_sequence = image_arr[i]
             image_sequence = []
@@ -111,4 +111,4 @@ def test(path_list):
 
 if __name__ == '__main__':
     test(par.test_video)
-    test(par.train_video)
+    #test(par.train_video)

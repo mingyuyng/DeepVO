@@ -80,6 +80,8 @@ class DeepVO(nn.Module):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
 
+        
+
 
     def forward(self, x, prev=None):
         # x: (batch, seq_len, channel, width, height)
@@ -125,13 +127,15 @@ class DeepVO(nn.Module):
         # Weighted MSE Loss
         angle_loss = torch.nn.functional.mse_loss(angle, y[:,:,:3])
         translation_loss = torch.nn.functional.mse_loss(trans, y[:,:,3:])
+        yaw_loss = torch.nn.functional.mse_loss(angle[:,:,1], y[:,:,1])
+
         loss = 100 * angle_loss + translation_loss
 
-        return loss, angle_loss, translation_loss
+        return loss, angle_loss, translation_loss, yaw_loss
 
     def step(self, x, y, optimizer, prev=None):
         optimizer.zero_grad()
-        loss, angle_loss, translation_loss = self.get_loss(x, y, prev=prev)
+        loss, angle_loss, translation_loss, _ = self.get_loss(x, y, prev=prev)
         loss.backward()
         optimizer.step()
         return loss, angle_loss, translation_loss

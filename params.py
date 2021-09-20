@@ -13,17 +13,16 @@ class Parameters():
         self.valid_video = ['03', '05']
         self.test_video = ['03', '04', '05', '06', '07', '10']
 
-        self.partition = 0.95      # partition videos in 'train_video' to train / valid dataset
-        self.seq_len = 5           # Image sequence length
+        self.seq_len = 7           # Image sequence length
         self.sample_times = 1      # sample the image sequence from different starting points
-        self.overlap = 4           # overlap between adjacent sampled image sequences
+        self.overlap = 6           # overlap between adjacent sampled image sequences
 
         # Data Preprocessing
         self.img_w = 640   # 1280 in the original paper
         self.img_h = 192   # 384 in the original paper
 
         # Data Augmentation
-        self.is_hflip = True  # Whether to apply horizontal flips as data augmentation
+        self.is_hflip = False  # Whether to apply horizontal flips as data augmentation
         
         self.rnn_hidden_size = 1000
         self.conv_dropout = (0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.5)
@@ -38,14 +37,14 @@ class Parameters():
         self.optim_lr = 1e-3
         self.optim_decay = 2e-6
         self.optim_lr_decay_factor = 0.1
-        self.optim_lr_step = 45
+        self.optim_lr_step = 40
 
         # Pretrain, Resume training
-        self.pretrained_flownet = './models/flownets_bn_EPE2.459.pth.tar'
+        self.pretrained_flownet = './flownets_bn_EPE2.459.pth.tar'
         self.resume = False
-        self.resume_t_or_v = '.train'
+        self.resume_t_or_v = '.epoch_91'
         
-        self.experiment_name = 'experiment1'
+        self.experiment_name = '0918'
         self.save_path = 'experiments/{}'.format(self.experiment_name)
 
         self.name = 't{}_v{}_im{}x{}_s{}_b{}'.format(''.join(self.train_video), ''.join(self.test_video), self.img_h, self.img_w, self.seq_len, self.batch_size)
