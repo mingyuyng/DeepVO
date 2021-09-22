@@ -24,12 +24,13 @@ def test(path_list):
     M_deepvo = DeepVO(par.img_h, par.img_w, par.batch_norm)
     use_cuda = torch.cuda.is_available()
     if use_cuda:
-        M_deepvo = M_deepvo.to(device)
+        M_deepvo = M_deepvo.to(par.device)
         M_deepvo.load_state_dict(torch.load(load_model_path))
     else:
-        M_deepvo.load_state_dict(torch.load(load_model_path, map_location={'cuda:1': 'cpu'}))
+        M_deepvo.load_state_dict(torch.load(load_model_path, map_location={'cpu'}))
     print('Load model from: ', load_model_path)
     
+
     M_deepvo.eval()
     for test_video in path_list:
         data = get_data_info(folder_list=[test_video], seq_len=10, drop_last=False, overlap=1)
@@ -52,7 +53,7 @@ def test(path_list):
                 img_as_tensor = TF.to_tensor(img_as_img)-0.5
                 img_as_tensor = img_as_tensor.unsqueeze(0)
                 image_sequence.append(img_as_tensor)
-            image_sequence = torch.cat(image_sequence, 0).to(device)
+            image_sequence = torch.cat(image_sequence, 0).to(par.device)
 
             gt_sequence = groundtruth_arr[i][:, :6]
 

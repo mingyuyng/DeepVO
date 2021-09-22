@@ -80,7 +80,18 @@ class DeepVO(nn.Module):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
 
-        
+    def load_Flownet(self):
+        # Load the pre-trained FlowNet
+        pretrained_w = torch.load(par.pretrained_flownet, map_location='cpu')
+
+        # Load FlowNet weights pretrained with FlyingChairs
+        # NOTE: the pretrained model assumes image rgb values in range [-0.5, 0.5]
+        if par.pretrained_flownet and not par.resume:
+            # Use only conv-layer-part of FlowNet as CNN for DeepVO
+            model_dict = self.state_dict()
+            update_dict = {k: v for k, v in pretrained_w['state_dict'].items() if k in model_dict}
+            model_dict.update(update_dict)
+            self.load_state_dict(model_dict)
 
 
     def forward(self, x, prev=None):
@@ -95,10 +106,7 @@ class DeepVO(nn.Module):
         x = x.view(batch_size, seq_len, -1)
 
         # RNN
-        if prev is None:
-            out, hc = self.rnn(x)
-        else:
-            out, hc = self.rnn(x, prev)
+        out, hc = self.rnn(x) if not prev else self.rnn(x, prev)
 
         out = self.rnn_drop_out(out)
         pose = self.linear(out)
@@ -122,22 +130,74 @@ class DeepVO(nn.Module):
         return [param for name, param in self.named_parameters() if 'bias' in name]
 
     def get_loss(self, x, y, prev=None):
-
         angle, trans, _ = self.forward(x, prev=prev)        
-        # Weighted MSE Loss
         angle_loss = torch.nn.functional.mse_loss(angle, y[:,:,:3])
         translation_loss = torch.nn.functional.mse_loss(trans, y[:,:,3:])
-        yaw_loss = torch.nn.functional.mse_loss(angle[:,:,1], y[:,:,1])
-
         loss = 100 * angle_loss + translation_loss
-
-        return loss, angle_loss, translation_loss, yaw_loss
+        return loss, angle_loss, translation_loss
 
     def step(self, x, y, optimizer, prev=None):
         optimizer.zero_grad()
-        loss, angle_loss, translation_loss, _ = self.get_loss(x, y, prev=prev)
+        loss, angle_loss, translation_loss = self.get_loss(x, y, prev=prev)
         loss.backward()
         optimizer.step()
         return loss, angle_loss, translation_loss
+
+
+    def train_net(self, dataloader, optimizer):
+
+        self.train()
+        loss_ang_mean_train = 0
+        loss_trans_mean_train = 0
+        iter_num = 0
+
+        for t_x, t_y in dataloader:
+            t_x = t_x.to(par.device)
+            t_y = t_y.to(par.device)
+            loss, angle_loss, translation_loss = self.step(t_x, t_y, optimizer)
+            
+            loss = loss.data.cpu().numpy()
+            angle_loss = angle_loss.data.cpu().numpy()
+            translation_loss = translation_loss.data.cpu().numpy()
+
+            loss_ang_mean_train += float(angle_loss) * 100 
+            loss_trans_mean_train += float(translation_loss)
+
+            iter_num += 1
+            if iter_num % 20 == 0:
+                message = f'Iteration: {iter_num}, Loss: {loss:.3f}, angle: {100*angle_loss:.4f}, trans: {translation_loss:.3f}'
+                f = open(par.record_path, 'a')
+                f.write(message+'\n') 
+                print(message)
+
+        loss_ang_mean_train /= len(dataloader)
+        loss_trans_mean_train /= len(dataloader)
+        loss_mean_train = loss_ang_mean_train + loss_trans_mean_train
+
+        return loss_mean_train, loss_ang_mean_train, loss_trans_mean_train
+
+    def valid_net(self, dataloader):
+
+        self.eval()
+        loss_ang_mean_valid = 0
+        loss_trans_mean_valid = 0
+        loss_yaw_mean_valid = 0
+        for v_x, v_y in dataloader:
+
+            v_x = v_x.to(par.device)
+            v_y = v_y.to(par.device)
+
+            loss, angle_loss, translation_loss = self.get_loss(v_x, v_y)
+            loss = loss.data.cpu().numpy()
+            angle_loss = angle_loss.data.cpu().numpy()
+            translation_loss = translation_loss.data.cpu().numpy()
+
+            loss_ang_mean_valid += float(angle_loss) * 100 
+            loss_trans_mean_valid += float(translation_loss)
+            loss_mean_valid = loss_ang_mean_valid + loss_trans_mean_valid
+
+        return loss_mean_valid, loss_ang_mean_valid, loss_trans_mean_valid
+
+
 
 
