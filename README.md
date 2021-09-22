@@ -16,7 +16,7 @@ Run `preprocessing.py` to get the ground truth for relative poses. The 6DoF rela
 We refer people to the original [github](https://github.com/ChiWeiHsiao/DeepVO-pytorch) to download the pre-trained FlowNet. Please modify `params.py` to set up the right path.
 
 ## Train the DeepVO model
-Run `train.py` to train the DeepVO model. The model will be saved at `experiments/experiment_name/models` and the log file will be stored under `experiments/experiment_name/record`. The hyper-parameters are included in `params.py` and instructions are provided inside. 
+Run `train.py` to train the DeepVO model. The model will be saved at `experiments/experiment_name/models` and the log file will be stored under `experiments/experiment_name/record`. The hyper-parameters are included in `params.py` and instructions are provided inside. The default image size is set to be `192 x 640`
 
 ## Test the DeepVO model
 Run `test.py` to generate estimations under `experiments/experiment_name/results`. 
@@ -25,3 +25,26 @@ To evaluate the test results, run `evaluation.py` to generate visualizations und
 
 ## Results 
 
+03
+
+<img src="figs/03_path.png" alt="03" width="700"/>
+
+04
+
+<img src="figs/04_path.png" alt="04" width="700"/>
+
+05
+
+<img src="figs/05_path.png" alt="05" width="700"/>
+
+06
+
+<img src="figs/06_path.png" alt="06" width="700"/>
+
+07
+
+<img src="figs/07_path.png" alt="07" width="700"/>
+
+10
+
+<img src="figs/10_path.png" alt="10" width="700"/>
